@@ -3,6 +3,7 @@ package acyclicloader
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -28,21 +29,65 @@ type component struct {
 }
 
 // Components holds a set of components with acyclic inter-dependencies.
+//
+// A component is a mapping from a string to function that loads the component.
+// The right-hand-side in this mapping must be a function on the form:
+//   func () ComponentType
+//   func () (ComponentType, error)
+//   func (struct{Dependency DependencyType, ...}) ComponentType
+//   func (struct{Dependency DependencyType, ...}) (ComponentType, error)
+// where ComponentType is the type of the component, and Dendency is a component
+// that this component depends on and DependencyType is the type of said
+// dependency.
+//
+// For example, the following "Users" component has type *UserModel and depends
+// on the "Database" component which has the type *sql.DB.
+//   "Users": func(options struct { Database *sql.DB }) *UserModel {
+//       return &UserModel{db: options.Database}
+//   },
 type Components map[string]interface{}
+
+// AsLoader returns an AcyclicLoader or panics
+func (c Components) AsLoader() *AcyclicLoader {
+	a, err := New(c)
+	if err != nil {
+		panic(err)
+	}
+	return a
+}
+
+// MustLoad will load given component or panics
+func (c Components) MustLoad(component string) interface{} {
+	v, err := c.AsLoader().Load(component)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
 
 // New creates a AcyclicLoader from a set of components.
 //
-// components is expected to a map from component name to component loader
-// function. A component loader is a function from struct with dependent
-// compontents as fields to a tuple of component and error value.
+// This will return an error if there is some type error, cyclic dependency or
+// missing dependency in the set of components given. Since such an error is
+// consistent it is preferable to use acyclicloader.Components{...}.AsLoader()
+// when creating a loader as global variable.
 func New(components Components) (*AcyclicLoader, error) {
 	a := &AcyclicLoader{
 		components: make(map[string]*component, len(components)),
 	}
 	a.c.L = &a.m
 
+	// Sort component names so that the error returned is always the same
+	// otherwise it gets really confusing to debug
+	componentNames := make([]string, 0, len(components))
+	for name := range components {
+		componentNames = append(componentNames, name)
+	}
+	sort.Strings(componentNames)
+
 	// Populate components
-	for name, fn := range components {
+	for _, name := range componentNames {
+		fn := components[name]
 		if fn == nil {
 			return nil, &ComponentDefinitionError{
 				Component: name,
@@ -68,12 +113,12 @@ func New(components Components) (*AcyclicLoader, error) {
 			}
 		case 2:
 			result = t.Out(0)
-			if t.Out(0) != typeOfError {
+			if t.Out(1) != typeOfError {
 				return nil, &ComponentDefinitionError{
 					Component: name,
 					message: fmt.Sprintf(
 						"expected 2nd result from '%s' to have error type, but found %s",
-						name, t.Out(0).String(),
+						name, t.Out(1).String(),
 					),
 				}
 			}
@@ -93,7 +138,8 @@ func New(components Components) (*AcyclicLoader, error) {
 	}
 
 	// Populate and check dependencies
-	for name, component := range a.components {
+	for _, name := range componentNames {
+		component := a.components[name]
 		t := component.fn.Type()
 		switch t.NumIn() {
 		case 0:
@@ -146,7 +192,8 @@ func New(components Components) (*AcyclicLoader, error) {
 	}
 
 	// Check for cycles
-	for name, component := range a.components {
+	for _, name := range componentNames {
+		component := a.components[name]
 		cycle := a.detectCycles(component, []string{name})
 		if cycle != nil {
 			return nil, &ComponentDefinitionError{
@@ -253,7 +300,7 @@ func (a *AcyclicLoader) Clone() *AcyclicLoader {
 	return a2
 }
 
-// MustLoad will load given component or panic
+// MustLoad will load given component or panics
 func (a *AcyclicLoader) MustLoad(component string) interface{} {
 	v, err := a.Load(component)
 	if err != nil {
