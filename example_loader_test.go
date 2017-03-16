@@ -35,9 +35,10 @@ var components = acyclicloader.Components{
 	}) http.Handler {
 		// Typically, you would pass options to a custom struct that implements
 		// all of your HTTP handlers.
+		db := options.Database
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var name string
-			options.Database.QueryRow("SELECT name FROM users WHERE age=?", 29).Scan(&name)
+			db.QueryRow("SELECT name FROM users WHERE age=?", 29).Scan(&name)
 			w.WriteHeader(http.StatusOK)
 			result := strings.Replace(options.Template, "<name>", name, -1)
 			w.Write([]byte(result))
