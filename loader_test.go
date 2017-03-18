@@ -47,7 +47,7 @@ func TestCyclicDependencies(t *testing.T) {
 		"B": func(options struct{ C int }) int { return options.C + 5 },
 		"C": func(options struct{ B int }) int { return options.B + 5 },
 	})
-	t.Log(err)
+	t.Logf("got error as expected: '%s'", err)
 	if err == nil {
 		t.Error("expected an error")
 	}
@@ -59,7 +59,7 @@ func TestLongCyclicDependencies(t *testing.T) {
 		"B": func(options struct{ C int }) int { return options.C + 5 },
 		"C": func(options struct{ A int }) int { return options.A + 5 },
 	})
-	t.Log(err)
+	t.Logf("got error as expected: '%s'", err)
 	if err == nil {
 		t.Error("expected an error")
 	}
@@ -69,7 +69,7 @@ func TestSelfDependency(t *testing.T) {
 	_, err := New(Components{
 		"A": func(options struct{ A int }) int { return options.A + 5 },
 	})
-	t.Log(err)
+	t.Logf("got error as expected: '%s'", err)
 	if err == nil {
 		t.Error("expected an error")
 	}
@@ -79,7 +79,7 @@ func TestMissingDependency(t *testing.T) {
 	_, err := New(Components{
 		"A": func(options struct{ B int }) int { return options.B + 5 },
 	})
-	t.Log(err)
+	t.Logf("got error as expected: '%s'", err)
 	if err == nil {
 		t.Error("expected an error")
 	}
@@ -90,7 +90,7 @@ func TestDependencyTypeMismatch(t *testing.T) {
 		"A": func(options struct{ B int }) int { return options.B + 5 },
 		"B": func() float64 { return 5 },
 	})
-	t.Log(err)
+	t.Logf("got error as expected: '%s'", err)
 	if err == nil {
 		t.Error("expected an error")
 	}
