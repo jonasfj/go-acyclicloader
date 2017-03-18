@@ -9,9 +9,9 @@ on other components.
 
 ```go
 import (
-  "fmt"
-  "net/http"
-  "github.com/jonasfj/go-acyclicloader"
+    "fmt"
+    "net/http"
+    "github.com/jonasfj/go-acyclicloader"
 )
 
 var loader = acyclicloader.Components{
