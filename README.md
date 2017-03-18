@@ -1,4 +1,4 @@
-Acyclic Component Loader for Go
+Acyclic Component Loader for Go [![Build Status](https://travis-ci.org/jonasfj/go-acyclicloader.svg?branch=master)](https://travis-ci.org/jonasfj/go-acyclicloader)
 ===============================
 
-TODO: More examples... see godoc for now.
+ * [Documentation](https://godoc.org/github.com/jonasfj/go-acyclicloader)
