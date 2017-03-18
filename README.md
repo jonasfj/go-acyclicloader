@@ -32,7 +32,7 @@ func main() {
 When loading a component the loader will load all dependencies concurrently.
 As an added benefit you can overwrite component using
 `loader.WithOverwrites(map[string]interface{}{"Port": 8080})`, which is
-extremely useful during testing. For more details refer to the example or
+useful when writing tests. For more details refer to the example or
 documentation:
 
  * [Documentation](https://godoc.org/github.com/jonasfj/go-acyclicloader)
@@ -40,4 +40,4 @@ documentation:
 
 License
 -------
-This package is released under MPLv2.
+This package is released under [MPLv2](https://www.mozilla.org/en-US/MPL/2.0/).
