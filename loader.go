@@ -182,7 +182,7 @@ func New(components Components) (*AcyclicLoader, error) {
 				return nil, &ComponentDefinitionError{
 					Component: name,
 					message: fmt.Sprintf(
-						"'%s' depends on component '%s' with type %s, but '%s' expects %s",
+						"'%s' depends on component '%s' which has type %s, but '%s' expects %s",
 						name, field.Name, dep.result.String(), name, field.Type.String(),
 					),
 				}
@@ -249,9 +249,11 @@ func (a *AcyclicLoader) WithOverwrites(values map[string]interface{}) *AcyclicLo
 	for name, c := range a.components {
 		var value interface{}
 		var err error
+		var loaded bool
 		if !needsPurging(name) {
 			value = c.value
 			err = c.err
+			loaded = c.loaded
 		}
 		if val, ok := values[name]; ok {
 			value = val
@@ -263,8 +265,8 @@ func (a *AcyclicLoader) WithOverwrites(values map[string]interface{}) *AcyclicLo
 			dependencies: c.dependencies,
 			value:        value,
 			err:          err,
-			loaded:       c.loaded,
-			loading:      c.loaded,
+			loaded:       loaded,
+			loading:      loaded,
 		}
 	}
 	a.m.Unlock()
